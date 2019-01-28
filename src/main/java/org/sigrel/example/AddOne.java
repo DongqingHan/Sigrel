@@ -6,7 +6,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
-public class AddOne extends Mapper<Object, Text, Text, NullWritable> {
+public class AddOne extends Mapper<Object, Text, Text, Text> {
     // recent super step number.
     protected int iteration;
     
@@ -21,6 +21,6 @@ public class AddOne extends Mapper<Object, Text, Text, NullWritable> {
     protected void map(Object key, Text value, Context context)
             throws IOException, InterruptedException {
         context.getCounter("Message-Counter", "count").increment(1);
-        context.write(new Text(value.toString() + String.valueOf(iteration)), NullWritable.get());
+        context.write(new Text(String.valueOf(iteration)), new Text(value.toString() + String.valueOf(iteration)));
     }
 }

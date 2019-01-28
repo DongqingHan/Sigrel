@@ -1,7 +1,10 @@
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -11,7 +14,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.sigrel.core.GraphComputer;
 import org.sigrel.core.GraphReader;
 import org.sigrel.core.GraphWriter;
-
+import org.sigrel.example.IdentityReducer;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.Tool;
 
@@ -54,23 +57,26 @@ public class SuperStep extends Configured implements Tool {
         
                 job.setMapperClass(GraphReader.class);
                 job.setReducerClass(GraphComputer.class);
+                //job.setReducerClass(IdentityReducer.class); //test code
                 
                 job.setMapOutputKeyClass(Text.class);
                 job.setMapOutputValueClass(Text.class);
                 job.setOutputKeyClass(Text.class);
                 job.setOutputValueClass(Text.class);
                 
-                job.setNumReduceTasks(100);
+                job.setNumReduceTasks(1);
                 
             } else if (final_iteration) {
                 Path in_path = new Path(output_path_str + String.valueOf(iteration - 1));
                 Path out_path = new Path(output_path_str);
-                FileInputFormat.setInputPaths(job, in_path);
+                
+                job.setInputFormatClass(KeyValueTextInputFormat.class);
+                KeyValueTextInputFormat.setInputPaths(job, in_path);
                 FileOutputFormat.setOutputPath(job, out_path);
         
                 job.setMapperClass(GraphWriter.class);
                 
-                job.setMapOutputKeyClass(Text.class);
+                job.setMapOutputKeyClass(NullWritable.class);
                 job.setMapOutputValueClass(Text.class);
                 
                 job.setNumReduceTasks(0);
@@ -78,42 +84,45 @@ public class SuperStep extends Configured implements Tool {
             } else {
                 Path in_path = new Path(output_path_str + String.valueOf(iteration - 1));
                 Path out_path = new Path(output_path_str + String.valueOf(iteration));
-                FileInputFormat.setInputPaths(job, in_path);
+                
+                job.setInputFormatClass(KeyValueTextInputFormat.class);
+                KeyValueTextInputFormat.setInputPaths(job, in_path);
                 FileOutputFormat.setOutputPath(job, out_path);
         
                 job.setMapperClass(Mapper.class);
                 job.setReducerClass(GraphComputer.class);
+                //job.setReducerClass(IdentityReducer.class); //test code
                 
                 job.setMapOutputKeyClass(Text.class);
                 job.setMapOutputValueClass(Text.class);
                 job.setOutputKeyClass(Text.class);
                 job.setOutputValueClass(Text.class);
                 
-                job.setNumReduceTasks(100);
+                job.setNumReduceTasks(1);
             }
             
             completed =  job.waitForCompletion(true);
             
             // checkout terminate condition.
             if (!completed) {
-                // [TODO] job failed, clean up is needed.
                 break;
             } else if (!final_iteration) {
                 // check message number.
                 // [TODO] will job be renewed during every submition???
                 final_iteration = job.getCounters().findCounter("Message-Counter", "count").getValue() == 0;
+                // final_iteration = (3 == iteration); // test code
             } else {
                 break;
             }
         }
-        
-        try {
-            //
-            for (int i = 0; i <= iteration; ++i) {
-             // [TODO] clear temporary directories.
+        // delete intermediate output directories.
+        for (int i = 0; i <= iteration; ++i) {
+            Job job = Job.getInstance(getConf());
+            Configuration conf = job.getConfiguration();
+            FileSystem fs = FileSystem.get(conf);
+            if (fs.exists(new Path(output_path_str + String.valueOf(i)))) {
+                fs.delete(new Path(output_path_str + String.valueOf(i)), true);
             }
-        } catch (Exception e) {
-            //
         }
 
         return completed ? 0 : 1;

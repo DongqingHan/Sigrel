@@ -15,6 +15,7 @@ import org.sigrel.core.GraphComputer;
 import org.sigrel.core.GraphReader;
 import org.sigrel.core.GraphWriter;
 import org.sigrel.example.IdentityReducer;
+import org.sigrel.example.degree.DegreeCounter;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.Tool;
 
@@ -56,15 +57,16 @@ public class SuperStep extends Configured implements Tool {
                 FileOutputFormat.setOutputPath(job, out_path);
         
                 job.setMapperClass(GraphReader.class);
-                job.setReducerClass(GraphComputer.class);
+                //job.setReducerClass(GraphComputer.class);
                 //job.setReducerClass(IdentityReducer.class); //test code
+                job.setReducerClass(DegreeCounter.class);
                 
                 job.setMapOutputKeyClass(Text.class);
                 job.setMapOutputValueClass(Text.class);
                 job.setOutputKeyClass(Text.class);
                 job.setOutputValueClass(Text.class);
                 
-                job.setNumReduceTasks(1);
+                job.setNumReduceTasks(10);
                 
             } else if (final_iteration) {
                 Path in_path = new Path(output_path_str + String.valueOf(iteration - 1));
@@ -73,13 +75,16 @@ public class SuperStep extends Configured implements Tool {
                 job.setInputFormatClass(KeyValueTextInputFormat.class);
                 KeyValueTextInputFormat.setInputPaths(job, in_path);
                 FileOutputFormat.setOutputPath(job, out_path);
-        
-                job.setMapperClass(GraphWriter.class);
                 
-                job.setMapOutputKeyClass(NullWritable.class);
+                job.setMapperClass(Mapper.class);
+                job.setReducerClass(GraphWriter.class);
+                
+                job.setMapOutputKeyClass(Text.class);
                 job.setMapOutputValueClass(Text.class);
+                job.setOutputKeyClass(Text.class);
+                job.setOutputValueClass(Text.class);
                 
-                job.setNumReduceTasks(0);
+                job.setNumReduceTasks(20);
             
             } else {
                 Path in_path = new Path(output_path_str + String.valueOf(iteration - 1));
@@ -90,15 +95,16 @@ public class SuperStep extends Configured implements Tool {
                 FileOutputFormat.setOutputPath(job, out_path);
         
                 job.setMapperClass(Mapper.class);
-                job.setReducerClass(GraphComputer.class);
+                //job.setReducerClass(GraphComputer.class);
                 //job.setReducerClass(IdentityReducer.class); //test code
+                job.setReducerClass(DegreeCounter.class);
                 
                 job.setMapOutputKeyClass(Text.class);
                 job.setMapOutputValueClass(Text.class);
                 job.setOutputKeyClass(Text.class);
                 job.setOutputValueClass(Text.class);
                 
-                job.setNumReduceTasks(1);
+                job.setNumReduceTasks(20);
             }
             
             completed =  job.waitForCompletion(true);
@@ -110,7 +116,6 @@ public class SuperStep extends Configured implements Tool {
                 // check message number.
                 // [TODO] will job be renewed during every submition???
                 final_iteration = job.getCounters().findCounter("Message-Counter", "count").getValue() == 0;
-                // final_iteration = (3 == iteration); // test code
             } else {
                 break;
             }

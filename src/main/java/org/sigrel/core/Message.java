@@ -12,7 +12,11 @@ public class Message<T> extends Element<T> {
         // TODO Auto-generated constructor stub
     }
     public Message(String id, T value) {
-        super(id, value);
+        super(null, value);
     }
-
+    public Message() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+    
 }

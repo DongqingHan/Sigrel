@@ -1,10 +1,5 @@
 package org.sigrel.core;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.alibaba.fastjson.JSON;
-
 public class Element<T> {
     private String id;
     private T value;

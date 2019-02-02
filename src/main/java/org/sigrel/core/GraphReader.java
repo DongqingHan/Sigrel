@@ -15,8 +15,8 @@ public class GraphReader extends Mapper<LongWritable, Text, Text, Text> {
         String to_vertex = tokens[2];
         
         context.write(new Text(from_vertex),
-                new Text(GraphComputer.valueConstruct("VERTEX", new Vertex<Integer>(from_vertex, null))));
+                new Text(GraphComputer.valueConstruct(Constants.CONTENT_TYPE_VERTEX, new Vertex<Integer>(from_vertex, null))));
         context.write(new Text(from_vertex),
-                new Text(GraphComputer.valueConstruct("EDGE", new Edge<String>(to_vertex, null))));
+                new Text(GraphComputer.valueConstruct(Constants.CONTENT_TYPE_EDGE, new Edge<String>(to_vertex, null))));
     }
 }

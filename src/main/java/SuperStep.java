@@ -2,20 +2,19 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.ToolRunner;
-import org.sigrel.core.GraphComputer;
+import org.sigrel.core.COMPUTER_COUNTER;
+import org.sigrel.core.Constants;
 import org.sigrel.core.GraphReader;
 import org.sigrel.core.GraphWriter;
-import org.sigrel.example.IdentityReducer;
-import org.sigrel.example.degree.DegreeCounter;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.Tool;
 
@@ -38,7 +37,7 @@ public class SuperStep extends Configured implements Tool {
             Job job = Job.getInstance(getConf());
             Configuration conf = job.getConfiguration();
             // Set super step number to be checked in map or reduce tasks.
-            conf.setInt("iteration", iteration);
+            conf.setInt(Constants.ITERATION, iteration);
             
             // Adjust input/output path and Mapper/Reducer class in each super step.
             if ( 0 == iteration ) {
@@ -57,9 +56,7 @@ public class SuperStep extends Configured implements Tool {
                 FileOutputFormat.setOutputPath(job, out_path);
         
                 job.setMapperClass(GraphReader.class);
-                //job.setReducerClass(GraphComputer.class);
-                //job.setReducerClass(IdentityReducer.class); //test code
-                job.setReducerClass(DegreeCounter.class);
+                job.setReducerClass((Class<? extends Reducer>) Class.forName("org.sigrel.example.degree.DegreeCounter"));
                 
                 job.setMapOutputKeyClass(Text.class);
                 job.setMapOutputValueClass(Text.class);
@@ -95,9 +92,7 @@ public class SuperStep extends Configured implements Tool {
                 FileOutputFormat.setOutputPath(job, out_path);
         
                 job.setMapperClass(Mapper.class);
-                //job.setReducerClass(GraphComputer.class);
-                //job.setReducerClass(IdentityReducer.class); //test code
-                job.setReducerClass(DegreeCounter.class);
+                job.setReducerClass((Class<? extends Reducer>) Class.forName("org.sigrel.example.degree.DegreeCounter"));
                 
                 job.setMapOutputKeyClass(Text.class);
                 job.setMapOutputValueClass(Text.class);
@@ -115,7 +110,7 @@ public class SuperStep extends Configured implements Tool {
             } else if (!final_iteration) {
                 // check message number.
                 // [TODO] will job be renewed during every submition???
-                final_iteration = job.getCounters().findCounter("Message-Counter", "count").getValue() == 0;
+                final_iteration = job.getCounters().findCounter(COMPUTER_COUNTER.MESSAGE_NUMBER).getValue() == 0;
             } else {
                 break;
             }

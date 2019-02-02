@@ -9,6 +9,8 @@ import org.sigrel.core.Message;
 import org.sigrel.core.Vertex;
 
 public class DegreeCounter extends GraphComputer<Integer, String, Integer> {
+    
+    @Override
     protected void compute(Vertex<Integer> vertex, List<Edge<String>> outEs, List<Message<Integer>> messages)
             throws IOException, InterruptedException {
         
@@ -16,7 +18,6 @@ public class DegreeCounter extends GraphComputer<Integer, String, Integer> {
             for (Edge<String> outE: outEs) {
                 this.sendMessage(outE.getId(), new Message<Integer>(1));
             }
-            
         } else if (1 == this.getIteration()) {
             int inDegree = 0;
             for (Message<Integer> ms : messages) {
@@ -25,7 +26,6 @@ public class DegreeCounter extends GraphComputer<Integer, String, Integer> {
             vertex.setValue(inDegree + outEs.size());
         } else {
             // [TODO] last iteration
-            
         }
         
     }
